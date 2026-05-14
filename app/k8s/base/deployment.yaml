@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: test-env
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: test-env
+
+  template:
+    metadata:
+      labels:
+        app: test-env
+
+    spec:
+      containers:
+        - name: test-env
+          image: nginx
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
