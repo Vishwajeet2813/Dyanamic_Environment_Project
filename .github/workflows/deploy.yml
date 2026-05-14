@@ -60,6 +60,6 @@ jobs:
 
       - name: Get service URL
         run: |
-          $url = minikube service test-env-service -n $env:NAMESPACE --url --wait=false
+          $url = minikube service test-env-service -n $env:NAMESPACE --url 2>&1 | Select-String "http"
           Write-Host "✅ Environment URL: $url"
         shell: powershell
