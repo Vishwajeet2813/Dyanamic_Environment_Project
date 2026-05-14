@@ -1,0 +1,59 @@
+name: Dynamic Environment Deploy
+
+on:
+  push:
+    branches:
+      - 'feature/**'
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set namespace name
+        run: |
+          $branch = "${{ github.ref_name }}"
+          $namespace = $branch -replace '/', '-'
+          $namespace = $namespace.ToLower()
+          echo "NAMESPACE=$namespace" >> $env:GITHUB_ENV
+        shell: powershell
+
+      - name: Start Minikube if not running
+        run: |
+          $status = minikube status --format='{{.Host}}' 2>$null
+          if ($status -ne "Running") {
+            minikube start
+          } else {
+            Write-Host "Minikube already running"
+          }
+        shell: powershell
+
+      - name: Create namespace
+        run: |
+          $exists = kubectl get namespace $env:NAMESPACE 2>$null
+          if (-not $exists) {
+            kubectl create namespace $env:NAMESPACE
+            Write-Host "Namespace $env:NAMESPACE created"
+          } else {
+            Write-Host "Namespace $env:NAMESPACE already exists"
+          }
+        shell: powershell
+
+      - name: Deploy to namespace
+        run: |
+          kubectl apply -f app/k8s/base/deployment.yaml -n $env:NAMESPACE
+          kubectl apply -f app/k8s/base/service.yaml -n $env:NAMESPACE
+        shell: powershell
+
+      - name: Wait for deployment
+        run: |
+          kubectl rollout status deployment/test-env -n $env:NAMESPACE --timeout=60s
+        shell: powershell
+
+      - name: Get service URL
+        run: |
+          minikube service test-env-service -n $env:NAMESPACE --url
+        shell: powershell
