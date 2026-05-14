@@ -60,6 +60,7 @@ jobs:
 
       - name: Get service URL
         run: |
-          $url = minikube service test-env-service -n $env:NAMESPACE --url 2>&1 | Select-String "http"
-          Write-Host "✅ Environment URL: $url"
+          $nodePort = kubectl get service test-env-service -n $env:NAMESPACE -o jsonpath='{.spec.ports[0].nodePort}'
+          $minikubeIp = minikube ip
+          Write-Host "✅ Environment URL: http://${minikubeIp}:${nodePort}"
         shell: powershell
