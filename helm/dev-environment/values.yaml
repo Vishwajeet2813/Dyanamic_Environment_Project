@@ -1,0 +1,31 @@
+namespace: default
+
+replicaCount: 1
+
+image:
+  repository: nginx
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: NodePort
+  port: 80
+
+ingress:
+  enabled: true
+  host: "dev.local"
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "250m"
+    memory: "256Mi"
+
+quota:
+  maxPods: "5"
+  requestsCpu: "500m"
+  requestsMemory: "512Mi"
+  limitsCpu: "1"
+  limitsMemory: "1Gi"
