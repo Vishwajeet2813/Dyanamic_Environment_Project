@@ -4,21 +4,16 @@ on:
   push:
     branches:
       - 'feature/**'
+  delete:
 
 jobs:
   deploy:
     runs-on: self-hosted
+    if: github.event_name == 'push'
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
-      - name: Debug - Check working directory
-        run: |
-          Write-Host "Current location: $(Get-Location)"
-          Write-Host "Files here:"
-          Get-ChildItem
-        shell: powershell
 
       - name: Set namespace name
         run: |
@@ -48,9 +43,9 @@ jobs:
       - name: Deploy to namespace
         run: |
           $repoPath = "${{ github.workspace }}"
-          Write-Host "Repo path: $repoPath"
           kubectl apply -f "$repoPath\app\k8s\base\deployment.yaml" -n $env:NAMESPACE
           kubectl apply -f "$repoPath\app\k8s\base\service.yaml" -n $env:NAMESPACE
+          kubectl apply -f "$repoPath\app\k8s\base\ingress.yaml" -n $env:NAMESPACE
         shell: powershell
 
       - name: Wait for deployment
@@ -64,11 +59,23 @@ jobs:
           $minikubeIp = minikube ip
           Write-Host "✅ Environment URL: http://${minikubeIp}:${nodePort}"
         shell: powershell
-      
-      - name: Deploy to namespace
+
+  cleanup:
+    runs-on: self-hosted
+    if: github.event_name == 'delete'
+
+    steps:
+      - name: Set namespace name
         run: |
-          $repoPath = "${{ github.workspace }}"
-          kubectl apply -f "$repoPath\app\k8s\base\deployment.yaml" -n $env:NAMESPACE
-          kubectl apply -f "$repoPath\app\k8s\base\service.yaml" -n $env:NAMESPACE
-          kubectl apply -f "$repoPath\app\k8s\base\ingress.yaml" -n $env:NAMESPACE
+          $branch = "${{ github.event.ref }}"
+          $namespace = $branch -replace '/', '-'
+          $namespace = $namespace.ToLower()
+          echo "NAMESPACE=$namespace" >> $env:GITHUB_ENV
+          Write-Host "Deleting namespace: $namespace"
+        shell: powershell
+
+      - name: Delete namespace
+        run: |
+          kubectl delete namespace $env:NAMESPACE --ignore-not-found
+          Write-Host "✅ Namespace $env:NAMESPACE deleted successfully"
         shell: powershell
