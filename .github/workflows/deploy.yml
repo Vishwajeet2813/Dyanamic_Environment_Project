@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - 'feature/**'
-  delete: {}
+  delete: 
 
 jobs:
   deploy:
@@ -45,30 +45,14 @@ jobs:
           $repoPath = "${{ github.workspace }}"
           kubectl apply -f "$repoPath\app\k8s\base\deployment.yaml" -n $env:NAMESPACE
           kubectl apply -f "$repoPath\app\k8s\base\service.yaml" -n $env:NAMESPACE
-          $ingressYaml = @"
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: test-env-ingress
-  namespace: $($env:NAMESPACE)
-  annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
-spec:
-  ingressClassName: nginx
-  rules:
-    - host: $($env:NAMESPACE).local
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: test-env-service
-                port:
-                  number: 80
-"@
-          $ingressYaml | kubectl apply -f -
-          Write-Host "✅ Ingress created for host: $($env:NAMESPACE).local"
+        shell: powershell
+
+      - name: Create dynamic ingress
+        run: |
+          $host = "$($env:NAMESPACE).local"
+          $json = '{"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"name":"test-env-ingress","namespace":"' + $env:NAMESPACE + '","annotations":{"nginx.ingress.kubernetes.io/rewrite-target":"/"}},"spec":{"ingressClassName":"nginx","rules":[{"host":"' + $host + '","http":{"paths":[{"path":"/","pathType":"Prefix","backend":{"service":{"name":"test-env-service","port":{"number":80}}}}]}}]}}'
+          $json | kubectl apply -f -
+          Write-Host "Ingress created for host: $host"
         shell: powershell
 
       - name: Wait for deployment
@@ -80,7 +64,7 @@ spec:
         run: |
           $nodePort = kubectl get service test-env-service -n $env:NAMESPACE -o jsonpath='{.spec.ports[0].nodePort}'
           $minikubeIp = minikube ip
-          Write-Host "✅ Environment URL: http://${minikubeIp}:${nodePort}"
+          Write-Host "Environment URL: http://${minikubeIp}:${nodePort}"
         shell: powershell
 
   cleanup:
@@ -100,5 +84,5 @@ spec:
       - name: Delete namespace
         run: |
           kubectl delete namespace $env:NAMESPACE --ignore-not-found
-          Write-Host "✅ Namespace $env:NAMESPACE deleted successfully"
+          Write-Host "Namespace $env:NAMESPACE deleted successfully"
         shell: powershell
