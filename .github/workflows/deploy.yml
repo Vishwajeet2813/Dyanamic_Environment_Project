@@ -49,10 +49,10 @@ jobs:
 
       - name: Create dynamic ingress
         run: |
-          $host = "$($env:NAMESPACE).local"
-          $json = '{"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"name":"test-env-ingress","namespace":"' + $env:NAMESPACE + '","annotations":{"nginx.ingress.kubernetes.io/rewrite-target":"/"}},"spec":{"ingressClassName":"nginx","rules":[{"host":"' + $host + '","http":{"paths":[{"path":"/","pathType":"Prefix","backend":{"service":{"name":"test-env-service","port":{"number":80}}}}]}}]}}'
+          $ingressHost = "$($env:NAMESPACE).local"
+          $json = '{"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"name":"test-env-ingress","namespace":"' + $env:NAMESPACE + '","annotations":{"nginx.ingress.kubernetes.io/rewrite-target":"/"}},"spec":{"ingressClassName":"nginx","rules":[{"host":"' + $ingressHost + '","http":{"paths":[{"path":"/","pathType":"Prefix","backend":{"service":{"name":"test-env-service","port":{"number":80}}}}]}}]}}'
           $json | kubectl apply -f -
-          Write-Host "Ingress created for host: $host"
+          Write-Host "Ingress created for host: $ingressHost"
         shell: powershell
 
       - name: Wait for deployment
