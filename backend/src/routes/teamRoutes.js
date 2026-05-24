@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const authMiddleware = require('../middleware/authMiddleware');
+const { authMiddleware, requireTeamLead } = require('../middleware/authMiddleware');
 const { 
   createTeam, 
   getTeams, 
@@ -9,10 +9,10 @@ const {
   removeMember
 } = require('../controllers/teamController');
 
-router.post('/create', authMiddleware, createTeam);
 router.get('/list', authMiddleware, getTeams);
-router.post('/addmember', authMiddleware, addMember);
 router.get('/:id/members', authMiddleware, getTeamMembers);
-router.delete('/removemember', authMiddleware, removeMember);
+router.post('/create', authMiddleware, requireTeamLead, createTeam);
+router.post('/addmember', authMiddleware, requireTeamLead, addMember);
+router.delete('/removemember', authMiddleware, requireTeamLead, removeMember);
 
 module.exports = router;

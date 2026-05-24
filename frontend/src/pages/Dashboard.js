@@ -60,10 +60,14 @@ const Dashboard = () => {
       <div style={styles.header}>
         <h1 style={styles.logo}>🚀 Dev Platform</h1>
         <div style={styles.userInfo}>
-          <a href="/admin" style={styles.navBtn}>👑 Admin</a>
-          <a href="/teams" style={styles.navBtn}>👥 Teams</a>
-          <span style={{color: 'white'}}>👤 {user?.name} ({user?.role})</span>
-          <button onClick={handleLogout} style={styles.logoutBtn}>Logout</button>
+            {user?.role === 'admin' && (
+                <a href="/admin" style={styles.navBtn}>👑 Admin</a>
+            )}
+            {(user?.role === 'teamlead' || user?.role === 'admin') && (
+                <a href="/teams" style={styles.navBtn}>👥 Teams</a>
+            )}
+            <span style={{color: 'white'}}>👤 {user?.name} ({user?.role})</span>
+            <button onClick={handleLogout} style={styles.logoutBtn}>Logout</button>
         </div>
       </div>
 
