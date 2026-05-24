@@ -1,7 +1,7 @@
-const pool = require('../config/db');
-const { exec } = require('child_process');
+const { exec, spawn } = require('child_process');
 const util = require('util');
 const execPromise = util.promisify(exec);
+const pool = require('../config/db');
 
 // Environment Create
 const createEnvironment = async (req, res) => {
@@ -27,11 +27,31 @@ const createEnvironment = async (req, res) => {
     // Kubernetes namespace create karo
     await execPromise(`kubectl create namespace ${namespace} --dry-run=client -o yaml | kubectl apply -f -`);
 
+    // Helm se deploy karo
+    const helmPath = 'D:/DevOps/Dyanamic env. project/helm/dev-environment';
+    await execPromise(`helm install ${namespace} "${helmPath}" --set namespace=${namespace} --set ingress.host=${namespace}.local --namespace ${namespace}`);
+
+    // Random port assign karo
+    const port = Math.floor(Math.random() * (9000 - 8081) + 8081);
+    const url = `http://localhost:${port}`;
+
     // Database mein save karo
     const newEnv = await pool.query(
       'INSERT INTO environments (user_id, name, namespace, url, status) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [user.id, name, namespace, `http://${namespace}.local`, 'running']
+      [user.id, name, namespace, url, 'running']
     );
+
+    // Port-forward automatically start karo
+    const portForward = spawn('kubectl', [
+      'port-forward',
+      `service/${namespace}-service`,
+      `${port}:80`,
+      '-n', namespace
+    ], {
+      detached: true,
+      stdio: 'ignore'
+    });
+    portForward.unref();
 
     res.status(201).json({
       message: '✅ Environment created successfully!',
@@ -82,8 +102,15 @@ const deleteEnvironment = async (req, res) => {
       });
     }
 
+    // Helm release delete karo
+    await execPromise(
+      `helm uninstall ${env.rows[0].namespace} --namespace ${env.rows[0].namespace}`
+    ).catch(() => {});
+
     // Kubernetes namespace delete karo
-    await execPromise(`kubectl delete namespace ${env.rows[0].namespace} --ignore-not-found`);
+    await execPromise(
+      `kubectl delete namespace ${env.rows[0].namespace} --ignore-not-found`
+    );
 
     // Database se delete karo
     await pool.query(
@@ -148,7 +175,7 @@ const getEnvironmentLogs = async (req, res) => {
     }
 
     const { stdout } = await execPromise(
-      `kubectl logs -l app=test-env -n ${env.rows[0].namespace} --tail=50 2>/dev/null || echo "No logs available"`
+      `kubectl logs -l app=${env.rows[0].namespace} -n ${env.rows[0].namespace} --tail=50 2>/dev/null || echo "No logs available"`
     );
 
     res.json({

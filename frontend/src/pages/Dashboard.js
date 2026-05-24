@@ -100,7 +100,16 @@ const Dashboard = () => {
               <div>
                 <h3 style={styles.envName}>{env.name}</h3>
                 <p style={styles.envUrl}>
-                  🔗 <a href={env.url} target="_blank" rel="noreferrer">{env.url}</a>
+                🔗 <a 
+                    href={env.url} 
+                    rel="noreferrer"
+                    onClick={(e) => {
+                    e.preventDefault();
+                    window.open(env.url, '_blank', 'noopener,noreferrer');
+                    }}
+                >
+                    {env.url}
+                </a>
                 </p>
                 <p style={styles.envNamespace}>📦 Namespace: {env.namespace}</p>
                 <span style={styles.statusBadge}>{env.status}</span>
