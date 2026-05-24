@@ -133,9 +133,39 @@ const getEnvironmentStatus = async (req, res) => {
   }
 };
 
+// Logs API
+const getEnvironmentLogs = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const env = await pool.query(
+      'SELECT * FROM environments WHERE id = $1',
+      [id]
+    );
+
+    if (env.rows.length === 0) {
+      return res.status(404).json({ message: 'Environment not found' });
+    }
+
+    const { stdout } = await execPromise(
+      `kubectl logs -l app=test-env -n ${env.rows[0].namespace} --tail=50 2>/dev/null || echo "No logs available"`
+    );
+
+    res.json({
+      namespace: env.rows[0].namespace,
+      logs: stdout.trim()
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 module.exports = { 
   createEnvironment, 
   getEnvironments, 
   deleteEnvironment,
-  getEnvironmentStatus
+  getEnvironmentStatus,
+  getEnvironmentLogs
 };

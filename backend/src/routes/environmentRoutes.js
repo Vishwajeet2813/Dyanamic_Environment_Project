@@ -5,13 +5,14 @@ const {
   createEnvironment, 
   getEnvironments, 
   deleteEnvironment,
-  getEnvironmentStatus
+  getEnvironmentStatus,
+  getEnvironmentLogs
 } = require('../controllers/environmentController');
 
-// Sabhi routes protected hain
 router.post('/create', authMiddleware, createEnvironment);
 router.get('/list', authMiddleware, getEnvironments);
 router.delete('/:id', authMiddleware, deleteEnvironment);
 router.get('/:id/status', authMiddleware, getEnvironmentStatus);
+router.get('/:id/logs', authMiddleware, getEnvironmentLogs);
 
 module.exports = router;

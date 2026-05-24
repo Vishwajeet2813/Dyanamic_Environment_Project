@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getEnvironments, createEnvironment, deleteEnvironment, getProfile } from '../services/api';
+import { getEnvironments, createEnvironment, deleteEnvironment } from '../services/api';
 
 const Dashboard = () => {
   const [environments, setEnvironments] = useState([]);
@@ -60,7 +60,9 @@ const Dashboard = () => {
       <div style={styles.header}>
         <h1 style={styles.logo}>🚀 Dev Platform</h1>
         <div style={styles.userInfo}>
-          <span>👤 {user?.name} ({user?.role})</span>
+          <a href="/admin" style={styles.navBtn}>👑 Admin</a>
+          <a href="/teams" style={styles.navBtn}>👥 Teams</a>
+          <span style={{color: 'white'}}>👤 {user?.name} ({user?.role})</span>
           <button onClick={handleLogout} style={styles.logoutBtn}>Logout</button>
         </div>
       </div>
@@ -99,12 +101,20 @@ const Dashboard = () => {
                 <p style={styles.envNamespace}>📦 Namespace: {env.namespace}</p>
                 <span style={styles.statusBadge}>{env.status}</span>
               </div>
-              <button 
-                onClick={() => handleDelete(env.id)} 
-                style={styles.deleteBtn}
-              >
-                🗑️ Delete
-              </button>
+              <div style={{display: 'flex', gap: '10px'}}>
+                <a 
+                  href={`/environment/${env.id}/logs`} 
+                  style={styles.logsBtn}
+                >
+                  📋 Logs
+                </a>
+                <button 
+                  onClick={() => handleDelete(env.id)} 
+                  style={styles.deleteBtn}
+                >
+                  🗑️ Delete
+                </button>
+              </div>
             </div>
           ))
         )}
@@ -127,6 +137,13 @@ const styles = {
   },
   logo: { margin: 0, fontSize: '24px' },
   userInfo: { display: 'flex', alignItems: 'center', gap: '15px' },
+  navBtn: {
+    color: 'white',
+    textDecoration: 'none',
+    backgroundColor: '#555',
+    padding: '8px 15px',
+    borderRadius: '5px'
+  },
   logoutBtn: {
     padding: '8px 15px',
     backgroundColor: '#e74c3c',
@@ -178,6 +195,14 @@ const styles = {
     padding: '3px 10px',
     borderRadius: '20px',
     fontSize: '12px'
+  },
+  logsBtn: {
+    padding: '8px 15px',
+    backgroundColor: '#3498db',
+    color: 'white',
+    borderRadius: '5px',
+    textDecoration: 'none',
+    fontSize: '14px'
   },
   deleteBtn: {
     padding: '8px 15px',

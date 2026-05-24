@@ -9,6 +9,7 @@ const authRoutes = require('./routes/authRoutes');
 const environmentRoutes = require('./routes/environmentRoutes');
 const userRoutes = require('./routes/userRoutes');
 const oauthRoutes = require('./routes/oauthRoutes');
+const teamRoutes = require('./routes/teamRoutes');
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/auth', oauthRoutes);
 app.use('/api/environment', environmentRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/team', teamRoutes);
 
 app.get('/', (req, res) => {
   res.json({ 
