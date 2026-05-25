@@ -2,6 +2,7 @@ const { exec, spawn } = require('child_process');
 const util = require('util');
 const execPromise = util.promisify(exec);
 const pool = require('../config/db');
+const fs = require('fs');
 
 // Environment Create
 const createEnvironment = async (req, res) => {
@@ -24,16 +25,45 @@ const createEnvironment = async (req, res) => {
       });
     }
 
-    // Kubernetes namespace create karo
-    await execPromise(`kubectl create namespace ${namespace} --dry-run=client -o yaml | kubectl apply -f -`);
-
-    // Helm se deploy karo
-    const helmPath = 'D:/DevOps/Dyanamic env. project/helm/dev-environment';
-    await execPromise(`helm install ${namespace} "${helmPath}" --set namespace=${namespace} --set ingress.host=${namespace}.local --namespace ${namespace}`);
-
     // Random port assign karo
     const port = Math.floor(Math.random() * (9000 - 8081) + 8081);
     const url = `http://localhost:${port}`;
+
+    // Kubernetes namespace create karo
+    await execPromise(`kubectl create namespace ${namespace} --dry-run=client -o yaml | kubectl apply -f -`);
+
+    // Helm se deploy karo — install ya upgrade
+    const helmPath = 'D:/DevOps/Dyanamic env. project/helm/dev-environment';
+    await execPromise(`helm upgrade --install ${namespace} "${helmPath}" --set namespace=${namespace} --set ingress.host=${namespace}.local --namespace ${namespace}`);
+
+    // Custom HTML page banao
+    const htmlTemplate = fs.readFileSync(
+      'D:/DevOps/Dyanamic env. project/app/templates/env-page.html',
+      'utf8'
+    );
+
+    const customHtml = htmlTemplate
+      .replace(/{{ENV_NAME}}/g, name)
+      .replace(/{{USER_NAME}}/g, user.email.split('@')[0])
+      .replace(/{{NAMESPACE}}/g, namespace)
+      .replace(/{{ENV_URL}}/g, url)
+      .replace(/{{CREATED_AT}}/g, new Date().toLocaleDateString());
+
+    // ConfigMap banao
+    const configMapYaml = `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ${namespace}-html
+  namespace: ${namespace}
+data:
+  index.html: |
+${customHtml.split('\n').map(line => '    ' + line).join('\n')}
+`;
+
+    const tmpFile = `D:/DevOps/Dyanamic env. project/app/templates/${namespace}-configmap.yaml`;
+    fs.writeFileSync(tmpFile, configMapYaml);
+    await execPromise(`kubectl apply -f "${tmpFile}"`);
+    fs.unlinkSync(tmpFile);
 
     // Database mein save karo
     const newEnv = await pool.query(
@@ -188,11 +218,58 @@ const getEnvironmentLogs = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+// Deploy App — Docker image deploy karo
+const deployApp = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { image } = req.body;
+    const user = req.user;
+
+    // Environment check karo
+    const env = await pool.query(
+      'SELECT * FROM environments WHERE id = $1 AND user_id = $2',
+      [id, user.id]
+    );
+
+    if (env.rows.length === 0) {
+      return res.status(404).json({
+        message: 'Environment not found'
+      });
+    }
+
+    const namespace = env.rows[0].namespace;
+
+    // Helm upgrade karo naye image ke saath
+    const helmPath = 'D:/DevOps/Dyanamic env. project/helm/dev-environment';
+    await execPromise(`helm upgrade ${namespace} "${helmPath}" \
+      --set namespace=${namespace} \
+      --set ingress.host=${namespace}.local \
+      --set image.repository=${image.split(':')[0]} \
+      --set image.tag=${image.split(':')[1] || 'latest'} \
+      --namespace ${namespace}`);
+
+    // Database update karo
+    await pool.query(
+      'UPDATE environments SET status = $1 WHERE id = $2',
+      ['running', id]
+    );
+
+    res.json({
+      message: `✅ App deployed successfully with image: ${image}`,
+      environment: env.rows[0]
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
 
 module.exports = { 
   createEnvironment, 
   getEnvironments, 
   deleteEnvironment,
   getEnvironmentStatus,
-  getEnvironmentLogs
+  getEnvironmentLogs,
+  deployApp
 };

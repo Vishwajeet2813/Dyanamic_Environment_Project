@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ENV_NAME}} - Dev Platform</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 50px;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+
+        .title {
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .info-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: left;
+        }
+
+        .info-label {
+            font-size: 12px;
+            color: #999;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .status-badge {
+            display: inline-block;
+            background: #4CAF50;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+
+        .deploy-section {
+            background: #f0f4ff;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .deploy-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .deploy-cmd {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 13px;
+            text-align: left;
+        }
+
+        .footer {
+            color: #999;
+            font-size: 12px;
+        }
+
+        .powered {
+            margin-top: 20px;
+            color: #667eea;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🚀</div>
+        <h1 class="title">{{ENV_NAME}}</h1>
+        <p class="subtitle">Your isolated development environment is ready!</p>
+        
+        <div class="status-badge">● Running</div>
+
+        <div class="info-grid">
+            <div class="info-card">
+                <div class="info-label">👤 Owner</div>
+                <div class="info-value">{{USER_NAME}}</div>
+            </div>
+            <div class="info-card">
+                <div class="info-label">📦 Namespace</div>
+                <div class="info-value">{{NAMESPACE}}</div>
+            </div>
+            <div class="info-card">
+                <div class="info-label">🌐 URL</div>
+                <div class="info-value">{{ENV_URL}}</div>
+            </div>
+            <div class="info-card">
+                <div class="info-label">📅 Created</div>
+                <div class="info-value">{{CREATED_AT}}</div>
+            </div>
+        </div>
+
+        <div class="deploy-section">
+            <div class="deploy-title">🔧 Deploy your app here:</div>
+            <div class="deploy-cmd">
+                kubectl apply -f your-app.yaml -n {{NAMESPACE}}
+            </div>
+        </div>
+
+        <p class="footer">This environment is isolated and dedicated to you.</p>
+        <p class="powered">⚡ Powered by Dev Platform</p>
+    </div>
+</body>
+</html>

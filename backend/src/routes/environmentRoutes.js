@@ -6,7 +6,8 @@ const {
   getEnvironments, 
   deleteEnvironment,
   getEnvironmentStatus,
-  getEnvironmentLogs
+  getEnvironmentLogs,
+  deployApp
 } = require('../controllers/environmentController');
 
 router.post('/create', authMiddleware, createEnvironment);
@@ -14,5 +15,6 @@ router.get('/list', authMiddleware, getEnvironments);
 router.delete('/:id', authMiddleware, deleteEnvironment);
 router.get('/:id/status', authMiddleware, getEnvironmentStatus);
 router.get('/:id/logs', authMiddleware, getEnvironmentLogs);
+router.post('/:id/deploy', authMiddleware, deployApp);
 
 module.exports = router;

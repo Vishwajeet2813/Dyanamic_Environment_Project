@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { getEnvironments, createEnvironment, deleteEnvironment } from '../services/api';
 
 const Dashboard = () => {
@@ -7,6 +8,7 @@ const Dashboard = () => {
   const [envName, setEnvName] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [deployImages, setDeployImages] = useState({});
 
   useEffect(() => {
     const userData = JSON.parse(localStorage.getItem('user'));
@@ -49,6 +51,27 @@ const Dashboard = () => {
     }
   };
 
+  const handleDeploy = async (id) => {
+    const image = deployImages[id];
+    if (!image) {
+      setMessage('❌ Docker image naam daalo!');
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await axios.post(
+        `http://localhost:5000/api/environment/${id}/deploy`,
+        { image },
+        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }}
+      );
+      setMessage(`✅ ${res.data.message}`);
+      fetchEnvironments();
+    } catch (err) {
+      setMessage('❌ ' + (err.response?.data?.message || 'Deploy failed'));
+    }
+    setLoading(false);
+  };
+
   const handleLogout = () => {
     localStorage.clear();
     window.location.href = '/';
@@ -60,14 +83,14 @@ const Dashboard = () => {
       <div style={styles.header}>
         <h1 style={styles.logo}>🚀 Dev Platform</h1>
         <div style={styles.userInfo}>
-            {user?.role === 'admin' && (
-                <a href="/admin" style={styles.navBtn}>👑 Admin</a>
-            )}
-            {(user?.role === 'teamlead' || user?.role === 'admin') && (
-                <a href="/teams" style={styles.navBtn}>👥 Teams</a>
-            )}
-            <span style={{color: 'white'}}>👤 {user?.name} ({user?.role})</span>
-            <button onClick={handleLogout} style={styles.logoutBtn}>Logout</button>
+          {user?.role === 'admin' && (
+            <a href="/admin" style={styles.navBtn}>👑 Admin</a>
+          )}
+          {(user?.role === 'teamlead' || user?.role === 'admin') && (
+            <a href="/teams" style={styles.navBtn}>👥 Teams</a>
+          )}
+          <span style={{color: 'white'}}>👤 {user?.name} ({user?.role})</span>
+          <button onClick={handleLogout} style={styles.logoutBtn}>Logout</button>
         </div>
       </div>
 
@@ -97,32 +120,53 @@ const Dashboard = () => {
         ) : (
           environments.map(env => (
             <div key={env.id} style={styles.envCard}>
-              <div>
+              <div style={{flex: 1}}>
                 <h3 style={styles.envName}>{env.name}</h3>
                 <p style={styles.envUrl}>
-                🔗 <a 
-                    href={env.url} 
+                  🔗 <a
+                    href={env.url}
                     rel="noreferrer"
                     onClick={(e) => {
-                    e.preventDefault();
-                    window.open(env.url, '_blank', 'noopener,noreferrer');
+                      e.preventDefault();
+                      window.open(env.url, '_blank', 'noopener,noreferrer');
                     }}
-                >
+                  >
                     {env.url}
-                </a>
+                  </a>
                 </p>
                 <p style={styles.envNamespace}>📦 Namespace: {env.namespace}</p>
                 <span style={styles.statusBadge}>{env.status}</span>
+
+                {/* Deploy Form */}
+                <div style={styles.deployForm}>
+                  <input
+                    style={styles.deployInput}
+                    placeholder="Docker image (e.g. nginx:latest)"
+                    value={deployImages[env.id] || ''}
+                    onChange={(e) => setDeployImages({
+                      ...deployImages,
+                      [env.id]: e.target.value
+                    })}
+                  />
+                  <button
+                    style={styles.deployBtn}
+                    onClick={() => handleDeploy(env.id)}
+                    disabled={loading}
+                  >
+                    🚀 Deploy
+                  </button>
+                </div>
               </div>
-              <div style={{display: 'flex', gap: '10px'}}>
-                <a 
-                  href={`/environment/${env.id}/logs`} 
+
+              <div style={styles.actionBtns}>
+                <a
+                  href={`/environment/${env.id}/logs`}
                   style={styles.logsBtn}
                 >
                   📋 Logs
                 </a>
-                <button 
-                  onClick={() => handleDelete(env.id)} 
+                <button
+                  onClick={() => handleDelete(env.id)}
                   style={styles.deleteBtn}
                 >
                   🗑️ Delete
@@ -193,11 +237,12 @@ const styles = {
   envCard: {
     display: 'flex',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     padding: '15px',
     border: '1px solid #eee',
     borderRadius: '8px',
-    marginBottom: '10px'
+    marginBottom: '10px',
+    gap: '15px'
   },
   envName: { margin: '0 0 5px 0', color: '#333' },
   envUrl: { margin: '0 0 5px 0', fontSize: '14px' },
@@ -209,13 +254,41 @@ const styles = {
     borderRadius: '20px',
     fontSize: '12px'
   },
+  deployForm: {
+    display: 'flex',
+    gap: '8px',
+    marginTop: '10px',
+    alignItems: 'center'
+  },
+  deployInput: {
+    padding: '8px',
+    border: '1px solid #ddd',
+    borderRadius: '5px',
+    fontSize: '14px',
+    width: '220px'
+  },
+  deployBtn: {
+    padding: '8px 15px',
+    backgroundColor: '#9b59b6',
+    color: 'white',
+    border: 'none',
+    borderRadius: '5px',
+    cursor: 'pointer',
+    fontSize: '14px'
+  },
+  actionBtns: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px'
+  },
   logsBtn: {
     padding: '8px 15px',
     backgroundColor: '#3498db',
     color: 'white',
     borderRadius: '5px',
     textDecoration: 'none',
-    fontSize: '14px'
+    fontSize: '14px',
+    textAlign: 'center'
   },
   deleteBtn: {
     padding: '8px 15px',
